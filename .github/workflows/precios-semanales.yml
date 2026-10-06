@@ -1,0 +1,17 @@
+name: Actualizar precios (semanal)
+on:
+  schedule:
+    - cron: "0 9 * * 1"      # todos los lunes 09:00 UTC = 06:00 en Argentina
+  workflow_dispatch:          # también se puede correr a mano desde la pestaña Actions
+jobs:
+  precios:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install firebase-admin
+      - run: python herramientas/actualizar_precios.py --firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
