@@ -1,0 +1,11 @@
+# ---- PRIVADO: nunca subir ----
+herramientas/config.json
+herramientas/costos.json
+herramientas/reportes/
+*-firebase-adminsdk-*.json
+*serviceAccount*.json
+*clave*.json
+.env
+# ---- varios ----
+__pycache__/
+.DS_Store

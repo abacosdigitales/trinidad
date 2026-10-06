@@ -1,0 +1,3 @@
+Aca van las fotos de los componentes (opcional).
+Nombre de cada archivo: ver ../imagenes-necesarias.csv  (ej: cpu-r5-5600.webp o .jpg)
+Si una foto no esta, el sitio muestra una ilustracion.

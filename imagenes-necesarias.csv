@@ -1,0 +1,51 @@
+﻿categoria,id,nombre,archivo
+cpu,r5-4500,Ryzen 5 4500,img/cpu-r5-4500.webp
+cpu,r5-5500,Ryzen 5 5500,img/cpu-r5-5500.webp
+cpu,r5-5600,Ryzen 5 5600,img/cpu-r5-5600.webp
+cpu,r5-5600gt,Ryzen 5 5600GT,img/cpu-r5-5600gt.webp
+cpu,r7-5700g,Ryzen 7 5700G,img/cpu-r7-5700g.webp
+cpu,r7-5700x,Ryzen 7 5700X,img/cpu-r7-5700x.webp
+cpu,r7-5800xt,Ryzen 7 5800XT,img/cpu-r7-5800xt.webp
+cpu,r7-5800x3d,Ryzen 7 5800X3D,img/cpu-r7-5800x3d.webp
+cpu,r5-7600,Ryzen 5 7600,img/cpu-r5-7600.webp
+cpu,r5-7600x,Ryzen 5 7600X,img/cpu-r5-7600x.webp
+cpu,r7-7800x3d,Ryzen 7 7800X3D,img/cpu-r7-7800x3d.webp
+cpu,r5-8400f,Ryzen 5 8400F,img/cpu-r5-8400f.webp
+cpu,r5-8500g,Ryzen 5 8500G,img/cpu-r5-8500g.webp
+cpu,r5-8600g,Ryzen 5 8600G,img/cpu-r5-8600g.webp
+cpu,r7-8700f,Ryzen 7 8700F,img/cpu-r7-8700f.webp
+cpu,r7-8700g,Ryzen 7 8700G,img/cpu-r7-8700g.webp
+cpu,r5-9600x,Ryzen 5 9600X,img/cpu-r5-9600x.webp
+cpu,r7-9700x,Ryzen 7 9700X,img/cpu-r7-9700x.webp
+cpu,r7-9800x3d,Ryzen 7 9800X3D,img/cpu-r7-9800x3d.webp
+cpu,r9-9900x,Ryzen 9 9900X,img/cpu-r9-9900x.webp
+cpu,r9-9950x,Ryzen 9 9950X,img/cpu-r9-9950x.webp
+cpu,r9-9950x3d,Ryzen 9 9950X3D,img/cpu-r9-9950x3d.webp
+mb,a520m,A520M,img/mb-a520m.webp
+mb,b550m,B550M,img/mb-b550m.webp
+mb,a620m,A620M,img/mb-a620m.webp
+mb,b650m,B650M,img/mb-b650m.webp
+mb,b840m,B840M,img/mb-b840m.webp
+mb,b850m,B850M,img/mb-b850m.webp
+mb,b850,B850 ATX,img/mb-b850.webp
+ram,16d4,16 GB DDR4,img/ram-16d4.webp
+ram,32d4,32 GB DDR4,img/ram-32d4.webp
+ram,16d5,16 GB DDR5,img/ram-16d5.webp
+ram,32d5,32 GB DDR5,img/ram-32d5.webp
+gpu,none,Sin placa de video,img/gpu-none.webp
+gpu,3050,RTX 3050 6 GB,img/gpu-3050.webp
+gpu,5050,RTX 5050 8 GB,img/gpu-5050.webp
+gpu,5060,RTX 5060 8 GB,img/gpu-5060.webp
+gpu,5060ti,RTX 5060 Ti 8 GB,img/gpu-5060ti.webp
+gpu,5060ti16,RTX 5060 Ti 16 GB,img/gpu-5060ti16.webp
+gpu,5070,RTX 5070 12 GB,img/gpu-5070.webp
+gpu,5070ti,RTX 5070 Ti 16 GB,img/gpu-5070ti.webp
+st,500,SSD NVMe 500 GB,img/st-500.webp
+st,1t,SSD NVMe 1 TB,img/st-1t.webp
+st,2t,SSD NVMe 2 TB,img/st-2t.webp
+cs,mini,Gabinete micro-ATX 3 ventiladores ARGB,img/cs-mini.webp
+cs,atx,Gabinete ATX mid-tower 3 ventiladores RGB,img/cs-atx.webp
+ps,500,Fuente 550W 80+ Bronze,img/ps-500.webp
+ps,600,Fuente 650W 80+ Gold,img/ps-600.webp
+ps,750,Fuente 750W 80+ Gold,img/ps-750.webp
+ps,850,Fuente 850W 80+ Gold,img/ps-850.webp
