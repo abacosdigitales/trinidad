@@ -17,6 +17,20 @@
         "https://www.hardrosario.com/mother-intel/hardwareall/placas-de-video/",
         "https://www.hardrosario.com/mother-intel/hardwareall/gabinetes-fuentes-y-coolers/gabinetes/",
         "https://www.hardrosario.com/mother-intel/hardwareall/gabinetes-fuentes-y-coolers/fuentes-de-alimentacion/"
+      ],
+      "id": "hr",
+      "principal": true
+    },
+    {
+      "nombre": "Maximus",
+      "id": "maximus",
+      "tipo": "maximus",
+      "principal": false,
+      "paginas_max": 6,
+      "_falta": "Faltan las direcciones de procesadores, placas madre, memorias, SSD y fuentes: copialas de la barra del navegador y agregalas a 'urls' cambiando el numero de PAGE a 1.",
+      "urls": [
+        "https://www.maximus.com.ar/Productos/Placas-De-Video/maximus.aspx?/CAT=48/SCAT=-1/M=-1/OR=3/PAGE=1/",
+        "https://www.maximus.com.ar/Productos/Gabinetes/maximus.aspx?/CAT=1/SCAT=-1/M=-1/OR=1/PAGE=1/"
       ]
     }
   ]

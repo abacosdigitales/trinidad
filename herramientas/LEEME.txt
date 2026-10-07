@@ -33,3 +33,9 @@ MODO FIREBASE (pedidos y precios en la nube) - ver ../LEEME-FIREBASE.md
   python actualizar_precios.py --firebase   modo robot semanal: lee/escribe Firestore (lo usa GitHub Actions)
 Con Firebase, tu margen y tus costos se editan desde admin.html > Precios, y config.json/costos.json
 quedan solo como respaldo inicial.
+
+---------------------------------------------------------------------------
+PROVEEDORES
+  Hard Rosario = fuente principal (define tus precios). Maximus = informativo (se muestra en cada pedido).
+  python actualizar_precios.py --probar    lee la 1ra pagina de cada proveedor y muestra que entendio, sin guardar nada.
+  Para sumar categorias de Maximus: agrega sus direcciones (con PAGE=1) a "urls" en config.publica.json.

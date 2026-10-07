@@ -102,3 +102,13 @@ herramientas/LEEME.txt  herramientas/actualizar.bat
 Si tu repositorio es **público** (GitHub Pages gratis lo requiere), esto es especialmente importante.
 
 Nota: en repositorios públicos GitHub **desactiva los workflows programados tras 60 días sin actividad**. Si pasa, entrá a Actions y reactivalo, o hacé cualquier cambio en el repositorio cada tanto.
+
+## Proveedores: Hard Rosario (Rosario) y Maximus (Buenos Aires)
+- **Hard Rosario** es la fuente principal: de ahí salen los costos que definen tus precios de venta.
+- **Maximus** se lee aparte (`privado/costos_maximus`) y solo se muestra en cada pedido, junto a Hard Rosario, para decidir dónde comprar. No cambia los precios que ve el cliente.
+- En cada pedido elegís la **zona de compra** (Rosario → Hard Rosario, Buenos Aires → Maximus). Si no la elegís, se deduce de la dirección. Con la zona elegida, el cálculo de ganancia usa los costos de ese proveedor.
+- **Antes de confiar en Maximus**, corré en tu PC (necesita solo Python, no Firebase):
+  `python actualizar_precios.py --probar`
+  y compará los precios que muestra con la página de Maximus. Si no coinciden, pasame la salida y ajusto el lector.
+- Hoy el script solo conoce las categorías de **placas de video** y **gabinetes** de Maximus. Para sumar procesadores, placas madre, memorias, SSD y fuentes, copiá la dirección de cada categoría (con `PAGE=1`) y agregala a `urls` en `herramientas/config.publica.json`, en el bloque de Maximus.
+- Si Maximus no se puede leer, el robot sigue con Hard Rosario y deja un aviso en el reporte.

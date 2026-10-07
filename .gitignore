@@ -1,6 +1,7 @@
 # ---- PRIVADO: nunca subir ----
 herramientas/config.json
 herramientas/costos.json
+herramientas/costos_*.json
 herramientas/reportes/
 *-firebase-adminsdk-*.json
 *serviceAccount*.json

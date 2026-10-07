@@ -15,7 +15,7 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent
 CFG = json.loads((BASE / "config.publica.json").read_text(encoding="utf-8"))
 if (BASE / "config.json").exists():  # privado, solo en tu PC (no se sube al repositorio): margen, armado, envio, cooler
-    CFG.update(json.loads((BASE / "config.json").read_text(encoding="utf-8")))
+    CFG.update({k: v for k, v in json.loads((BASE / "config.json").read_text(encoding="utf-8")).items() if k != "fuentes"})
 COSTOS_PATH = BASE / "costos.json"
 
 # ---------------------------------------------------------------------------
@@ -132,14 +132,60 @@ def parsear_tiendanube(h):
     return out
 
 
-def leer_fuente(f):
-    productos = []
+def precio_ar(s):
+    """Convierte '838,890' / '838.890' / '353.983,50' / '2500' en numero."""
+    s = s.strip().rstrip(".,")
+    if re.fullmatch(r"\d{1,3}([.,]\d{3})+", s):
+        return float(re.sub(r"[.,]", "", s))
+    m = re.fullmatch(r"(\d[\d.,]*?)[.,](\d{1,2})", s)
+    if m:
+        return float(re.sub(r"[.,]", "", m.group(1)) + "." + m.group(2))
+    return float(re.sub(r"[.,]", "", s))
+
+
+RE_PRECIO_TXT = re.compile(r"\$\s*(\d[\d.,]*)")
+RE_CUOTA = re.compile(r"cuota|inter[eé]s|\d\s*x\s*$", re.I)
+
+
+def parsear_maximus(h):
+    """Lector generico para Maximus: en el texto de la pagina, el nombre del producto aparece justo antes de su precio.
+    Se asume que el precio mostrado es el de contado/transferencia (verificalo con --probar)."""
+    h = re.sub(r"(?is)<(script|style|noscript)[^>]*>.*?</\1>", " ", h)
+    t = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", h)))
+    partes = RE_PRECIO_TXT.split(t)  # [texto, precio, texto, precio, ...]
+    out = []
+    for i in range(1, len(partes), 2):
+        antes, precio = partes[i - 1], partes[i]
+        try:
+            valor = precio_ar(precio)
+        except ValueError:
+            continue
+        if RE_CUOTA.search(antes[-45:]):
+            continue  # valor de una cuota ("12 cuotas de $..."): no es el precio del producto
+        if len(re.findall(r"[A-Za-z\u00c1-\u00fa]", antes)) >= 12:
+            out.append([antes[-170:].strip(), valor])
+        elif out and 0.6 * out[-1][1] <= valor <= out[-1][1]:
+            out[-1][1] = valor  # segundo precio del mismo producto (ej. efectivo): se queda el menor
+    return [(n, v, None, False) for n, v in out if v > 0]
+
+
+PARSERS = {"tiendanube": parsear_tiendanube, "maximus": parsear_maximus}
+
+
+def url_pagina(f, url, n):
+    if f["tipo"] == "maximus":
+        return re.sub(r"PAGE=\d+", "PAGE=%d" % n, url)
+    return url if n == 1 else url + f"page/{n}/"
+
+
+def leer_fuente(f, solo_primera=False):
+    parse, productos = PARSERS[f["tipo"]], []
     for url in f["urls"]:
         vistos = set()
-        for n in range(1, f.get("paginas_max", 6) + 1):
-            u = url if n == 1 else url + f"page/{n}/"
+        for n in range(1, 2 if solo_primera else f.get("paginas_max", 6) + 1):
+            u = url_pagina(f, url, n)
             try:
-                items = parsear_tiendanube(bajar(u))
+                items = parse(bajar(u))
             except urllib.error.HTTPError as e:
                 if e.code == 404:
                     break
@@ -148,13 +194,13 @@ def leer_fuente(f):
             except Exception as e:
                 print(f"  ! {u}: {e}")
                 break
-            nuevos = [it for it in items if it[0] not in vistos]
+            nuevos = [it for it in items if (it[0], it[1]) not in vistos]
             if not nuevos:
                 break
-            vistos.update(it[0] for it in nuevos)
+            vistos.update((it[0], it[1]) for it in nuevos)
             productos += [(f["nombre"],) + it for it in nuevos]
             time.sleep(1.0)  # cortesia con el servidor
-        print(f"  {f['nombre']}: {len(vistos)} productos en {url.rstrip('/').split('/')[-1]}")
+        print(f"  {f['nombre']}: {len(vistos)} productos en {url[:90]}")
     return productos
 
 
@@ -200,6 +246,25 @@ def leer_doc(db, col, doc):
     return s.to_dict() if s.exists else None
 
 
+def actualizar_costos(productos, costos, lineas, pref, limite, aceptar):
+    for clave, regla in MATCH.items():
+        p = mejor(productos, regla)
+        viejo = costos.get(clave)
+        if not p:
+            if viejo is not None or not pref:
+                lineas.append(f"SIN ACTUALIZAR  {pref}{clave:16} no se encontro (queda {viejo})")
+            continue
+        nuevo = round(p[2] * regla.get("k", 1), 1)
+        var = (nuevo - viejo) / viejo if viejo else 0
+        marca = "~estimado " if p[4] else ""
+        if viejo and abs(var) > limite and not aceptar:
+            lineas.append(f"RETENIDO        {pref}{clave:16} {viejo:>12,.0f} -> {nuevo:>12,.0f} ({var:+.0%}) {p[0]}: {p[1][:60]}")
+            continue
+        costos[clave] = nuevo
+        flag = "CAMBIO " if viejo is None or abs(var) >= 0.01 else "igual  "
+        lineas.append(f"{flag}{'!' if abs(var) >= 0.10 else ' '}        {pref}{clave:16} {viejo or 0:>12,.0f} -> {nuevo:>12,.0f} ({var:+.0%}) {marca}{p[1][:60]}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry", action="store_true", help="muestra los cambios sin guardar")
@@ -207,8 +272,18 @@ def main():
     ap.add_argument("--aceptar-todo", action="store_true", help="acepta variaciones mayores al limite")
     ap.add_argument("--firebase", action="store_true", help="lee y escribe en Firestore (modo robot semanal)")
     ap.add_argument("--sembrar", action="store_true", help="sube config.json y costos.json a Firestore (una sola vez)")
+    ap.add_argument("--probar", action="store_true", help="lee la 1ra pagina de cada proveedor y muestra que entendio (no guarda nada)")
     a = ap.parse_args()
     hoy = date.today().strftime("%d/%m/%Y")
+    if a.probar:
+        for f in CFG["fuentes"]:
+            prods = leer_fuente(f, solo_primera=True)
+            print(f"\n== {f['nombre']}: {len(prods)} productos leidos. Primeros 10 (nombre | precio):")
+            for p in prods[:10]:
+                print(f"   {p[1][-70:]:70} | {p[2]:>12,.0f}")
+            print("   Piezas del catalogo que se emparejaron:", sum(1 for r in MATCH.values() if mejor(prods, r)), "de", len(MATCH))
+        print("\nCompara estos precios con la pagina del proveedor: si coinciden, el lector esta bien.")
+        return
     local = json.loads(COSTOS_PATH.read_text(encoding="utf-8")) if COSTOS_PATH.exists() else {"items": {}}
     db = fb_init() if (a.firebase or a.sembrar) else None
     if a.sembrar:
@@ -219,38 +294,34 @@ def main():
         print(f"Listo: se subieron config, {len(costos)} costos y los precios de venta a Firestore.")
         return
     costos = dict(local["items"])
+    otros = {}
+    for f in CFG["fuentes"]:
+        if not f.get("principal", False):
+            ruta = BASE / f"costos_{f['id']}.json"
+            otros[f["id"]] = dict(json.loads(ruta.read_text(encoding="utf-8")).get("items", {})) if ruta.exists() else {}
     if a.firebase:
         if leer_doc(db, "privado", "config") is None or not (leer_doc(db, "privado", "costos") or {}).get("items"):
             sys.exit("Firestore todavia no tiene tu config y tus costos: corre primero  python actualizar_precios.py --sembrar")
         for k, v in (leer_doc(db, "privado", "config") or {}).items():
             if k in CLAVES_PRIVADAS:
                 CFG[k] = v
-        cd = leer_doc(db, "privado", "costos")
-        if cd and cd.get("items"):
-            costos = dict(cd["items"])
+        costos = dict(leer_doc(db, "privado", "costos")["items"])
+        for fid in otros:
+            otros[fid] = dict((leer_doc(db, "privado", "costos_" + fid) or {}).get("items", {}))
     lineas = [f"Reporte de precios {hoy}", ""]
     if not a.sin_red:
-        productos = []
-        for f in CFG["fuentes"]:
-            productos += leer_fuente(f)
-        if not productos:
-            sys.exit("No se pudo leer ningun producto: revisa la conexion o si cambio la pagina del proveedor.")
         limite = CFG.get("variacion_maxima", 0.35)
-        for clave, regla in MATCH.items():
-            p = mejor(productos, regla)
-            viejo = costos.get(clave)
-            if not p:
-                lineas.append(f"SIN ACTUALIZAR  {clave:16} no se encontro en los proveedores (queda {viejo})")
-                continue
-            nuevo = round(p[2] * regla.get("k", 1), 1)
-            var = (nuevo - viejo) / viejo if viejo else 0
-            marca = "~estimado " if p[4] else ""
-            if viejo and abs(var) > limite and not a.aceptar_todo:
-                lineas.append(f"RETENIDO        {clave:16} {viejo:>12,.0f} -> {nuevo:>12,.0f} ({var:+.0%}) {p[0]}: {p[1][:60]}")
-                continue
-            costos[clave] = nuevo
-            flag = "CAMBIO " if viejo is None or abs(var) >= 0.01 else "igual  "
-            lineas.append(f"{flag}{'!' if abs(var) >= 0.10 else ' '}        {clave:16} {viejo or 0:>12,.0f} -> {nuevo:>12,.0f} ({var:+.0%}) {marca}{p[1][:60]}")
+        for f in CFG["fuentes"]:
+            prods = leer_fuente(f)
+            if f.get("principal", False):
+                if not prods:
+                    sys.exit(f"No se pudo leer ningun producto de {f['nombre']}: revisa la conexion o si cambio la pagina.")
+                actualizar_costos(prods, costos, lineas, "", limite, a.aceptar_todo)
+            elif not prods:
+                lineas.append(f"SIN ACTUALIZAR  [{f['nombre']}] no se pudo leer ningun producto (corre con --probar)")
+            else:
+                actualizar_costos(prods, otros[f["id"]], lineas, f"[{f['nombre']}] ", limite, a.aceptar_todo)
+                lineas.append(f"[{f['nombre']}] piezas con precio: {len(otros[f['id']])} de {len(MATCH)}")
     faltan = [k for k in ("margen", "armado", "envio", "cooler_costo") if k not in CFG]
     if faltan:
         sys.exit("Falta " + ", ".join(faltan) + ": cargalos en config.json (local) o en Firestore (privado/config).")
@@ -262,11 +333,17 @@ def main():
     if a.firebase:
         db.collection("privado").document("costos").set({"_fecha": hoy, "items": costos})
         db.collection("publico").document("precios").set(salida)
+        for fid, it in otros.items():
+            if it:
+                db.collection("privado").document("costos_" + fid).set({"proveedor": fid, "_fecha": hoy, "items": it})
         db.collection("privado").document("reporte").set({"fecha": hoy, "lineas": lineas})
         print("\nListo. Costos, precios de venta y reporte publicados en Firestore.")
         return
     local.update({"_fecha": hoy, "items": costos})
     COSTOS_PATH.write_text(json.dumps(local, indent=1, ensure_ascii=False), encoding="utf-8")
+    for fid, it in otros.items():
+        if it:
+            (BASE / f"costos_{fid}.json").write_text(json.dumps({"proveedor": fid, "_fecha": hoy, "items": it}, indent=1, ensure_ascii=False), encoding="utf-8")
     dest = (BASE / CFG["salida_precios"]).resolve()
     dest.write_text(json.dumps(salida, indent=1, ensure_ascii=False), encoding="utf-8")
     (BASE / "reportes").mkdir(exist_ok=True)
